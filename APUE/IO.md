@@ -49,7 +49,7 @@ int main()
 /usr/include/asm-generic/errno.h
 ~~~
 
-~~~c
+~~~ c
 #include <errno.h>
 perror("fopen()",errno);
 #include <string.h>
