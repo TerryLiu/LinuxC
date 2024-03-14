@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 //使用 time 计算当前单核 累加 的速度
 int main()

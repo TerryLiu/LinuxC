@@ -34,7 +34,7 @@ int main()
         struct_tm = localtime(&stamp);
 
         strftime(fmttime,BUFSIZE,"%Y-%m-%d %H:%M:%S",struct_tm);
-        fprintf(fptr,"%d %s\n",++count,fmttime);
+        fprintf(fptr,"%-4d %s\n",++count,fmttime);
         fflush(fptr);
         sleep(1);
     }

@@ -335,18 +335,19 @@ int main(int argc,char **argv)
 - time() 从kernel中取出时间戳(以秒为单位)
 - gntime() 将时间戳转换为`struct_tm` 格林威治时间
 - localtime() 将时间戳转换为`struct_tm` 本地时间
-- mktime() jaing struct_tm结构体转换为时间戳，还可以检查是否溢出
+- mktime() 将struct_tm结构体转换为时间戳，还可以检查是否溢出
 - strftime(); 格式化时间字符串
 
 ~~~ c
 time_t stamp;
-time(&stamp);
-stamp = time(NULL);
+time(&stamp); //写法1: 填充结构体参数
+stamp = time(NULL); //写法2: 获取返回值
 
-tm = localtime(&stamp);
+tm = localtime(&stamp); //将时间戳转为本地时间
 
+// 格式化时间
 strftime(buf,BUFSIZE,"%Y-%m-%d",tm);
-puts(buf);
+puts(buf); //打印输出
 ~~~
 
 ~~~ c
@@ -401,19 +402,40 @@ int main()
 ## 进程环境
 ### main函数
 - `int main(int argc,char **argv)`
-### 进程的终止
+### 进程终止的8种方案(八种情况)
 - **正常终止**
-     - **从main函数返回** 
-     - **调用exit**
-     - **调用`_exit`或者`_Exit`**
+     - **从main函数返回,即调用return** 
+     - **调用`exit`函数**
+     - **调用`_exit`或者`_Exit`函数**
      - **最后一个线程从其启动例程返回**
      - **最后一个线程调用`pthread_exit`**
-#### 钩子函数a
+#### 钩子函数
     All functions registered with atexit(3) and on_exit(3) are called,in the reverse order of their registration.
 - `atexit()`
 ~~~ c
+#include <stdio.h>
+#include <stdlib.h>
 
+void atexit_func2(void) {
+  printf("Exiting program - function 2\n");
+}
+
+void atexit_func1(void) {
+  printf("Exiting program - function 1\n");
+  
+  atexit(atexit_func2);
+}
+
+int main(void) {
+  atexit(atexit_func1);
+  
+  printf("Main program\n");
+  
+  return 0;
+}
 ~~~
+内部注册的钩子函数会被先调用。
+atexit提供了一种简单的方法来注册程序退出前的清理函数。
 
 - **异常终止**
     - **调用`abort`**

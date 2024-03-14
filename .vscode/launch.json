@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/liuzhong/Files/docker/gcc9.4/ssd/linuxC/APUE/IPv4_Media/server",
+      "program": "/Users/liuzhong/Files/docker/gcc9.4/ssd/linuxC/APUE/IPv4_Media/server/build/Debug/outDebug"
+    }
+  ]
+}

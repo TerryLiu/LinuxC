@@ -29,7 +29,7 @@ int main(int argc,char** argv)
         fprintf(stdout,"Usage...");
         exit(1);
     }
-
+    // 打开传入的文件路径
     int sfd = open(argv[1],O_RDONLY);
     if (sfd < 0){
         strerror(errno);
@@ -39,13 +39,16 @@ int main(int argc,char** argv)
     int dfd = 1;
     char buf[SIZE];
     
+    // 注册信号处理函数
     signal(SIGALRM,handler);
+    // 定义一个1秒钟的signal
     alarm(1);
 
     while(1){
         int len = 0;//read的返回值
         int ret = 0;//write的返回值
         int pos = 0;//写截至的位置
+        // 读取文件数据
         len = read(sfd,buf,CPS);
         while (len < 0){
             if (errno == EINTR)
@@ -73,9 +76,11 @@ int main(int argc,char** argv)
             pos += ret;
             len -= ret;
         }
+        // 如果没有累计的令牌,就暂停执行,等待信号来打断
         while(token <= 0){
             pause();
         }
+        // 执行完了,释放令牌
         token--;
     }
 
