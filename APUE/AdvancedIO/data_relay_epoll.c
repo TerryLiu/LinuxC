@@ -146,19 +146,19 @@ static void relay(int fd1,int fd2){
             while (epoll_wait(epfd,&ev,1,-1) < 0){
                 if (errno == EINTR)
                   continue;
-                perror("poll()");
+                perror("epoll()");
                 exit(1);
             }
         }
 
         //查看监视结果
-        if ((ev.data.fd == fd1 && ev.events&POLLIN)||
-                (ev.data.fd == fd2 && ev.events&POLLOUT) ||
+        if ((ev.data.fd == fd1 && ev.events & EPOLLIN)||
+                (ev.data.fd == fd2 && ev.events & EPOLLOUT) ||
                     fsm12.state > STATE_AUTO){
             fsm_driver(&fsm12);
         }
-        if ((ev.data.fd == fd2 && ev.events&POLLIN) ||
-                (ev.data.fd == fd1 && ev.events&POLLOUT) ||
+        if ((ev.data.fd == fd2 && ev.events & EPOLLIN) ||
+                (ev.data.fd == fd1 && ev.events & EPOLLOUT) ||
                     fsm21.state > STATE_AUTO){
             fsm_driver(&fsm21);
         }

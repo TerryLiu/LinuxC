@@ -11,6 +11,7 @@
 
 #include "mytbf.h"
 
+// 定义一个真正的令牌桶结构体,用来替代头文件中的mytbf_t类型,由于mytbf_t其实是void类型,所以它的指针可以万能转换
 struct mytbf_st{
   int csp;
   int burst;
@@ -119,7 +120,7 @@ mytbf_t *mytbf_init(int cps,int burst){
   return tbf;
 }
 
-//获取token ptr是一个 void * size是用户想要获取的token数
+//获取token, ptr是一个 void指针, size是用户想要获取的token数
 int mytbf_fetchtoken(mytbf_t *ptr,int size){
   struct mytbf_st *tbf = ptr;
 

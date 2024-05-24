@@ -8,9 +8,9 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
-
+// 令牌桶的三要素
 static const int SIZE = 30;
-static const int CPS = SIZE;
+static const int CPS = SIZE; // 最大流速(每秒字节数)
 static const int BURST = 100;//最大令牌数
 
 static volatile int token = 0;//持有令牌数

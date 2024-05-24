@@ -6,7 +6,7 @@
 #include <sys/time.h>
 
 #include "mytbf.h"
-
+// 定义一个真正的令牌桶结构体,用来替代头文件中的mytbf_t类型,由于mytbf_t其实是void类型,所以它的指针可以万能转换
 struct mytbf_st{
     int csp;
     int burst;
@@ -97,6 +97,8 @@ static void mod_load(){
         perror("setitimer()");
         exit(1);
     }
+    // 钩子函数.atexit()函数用于注册一个在程序正常退出时需要执行的函数。
+    // 在程序运行期间，可以多次调用atexit()函数来注册多个退出函数，这些函数将在程序退出时按照相反的注册顺序依次执行。
     atexit(mod_unload);
 }
 
@@ -127,8 +129,9 @@ mytbf_t *mytbf_init(int cps,int burst){
     return tbf;
 }
 
-//获取token ptr是一个 void * size是用户想要获取的token数
+//获取token, ptr是一个 void指针, size是用户想要获取的token数
 int mytbf_fetchtoken(mytbf_t *ptr,int size){
+//  将传入的void指针转为真实的令牌桶结构体指针
     struct mytbf_st *tbf = ptr;
 
     if (size <= 0){
