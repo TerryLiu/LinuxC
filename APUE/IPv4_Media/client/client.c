@@ -39,11 +39,14 @@ static void print_help() {
 
 #define BUFSIZE 320*1024/8*3
 
-/*write to fd len bytes data*/
+/*write to fd len bytes data
+坚持写够多少字节的函数
+*/
 static int writen(int fd, const void *buf, size_t len) {
   int count = 0;
   int pos = 0;
   while (len > 0) {
+    // 循环调用write函数，直到成功写入len字节的数据
     count = write(fd, buf + pos, len);
     if (count < 0) {
       if (errno == EINTR)
@@ -51,10 +54,11 @@ static int writen(int fd, const void *buf, size_t len) {
       perror("write()");
       return -1;
     }
+    // 更新剩余的字节数和偏移量
     len -= count;
     pos += count;
   }
-  return 0;
+  return pos;
 }
 
 int main(int argc, char *argv[]) {
@@ -182,26 +186,29 @@ sizeof(mreq) 是选项值的大小。
     perror("fork()");
     exit(1);
   }
-  // 子进程的动作
+  // 子进程的动作: 从管道获取数据, 并进行播放
   if (pid == 0) // child, read, close write
   {
     /*decode*/
     /*mpg123 read from stdin*/
-    close(sd);      // socket
-    close(pd[1]);   // 0:read, 1:write
-    dup2(pd[0], 0); // set pd[0] as stdin
-    if (pd[0] > 0)  // close pd[0]
+    close(sd);      // socket 在子进程中关闭套接字的文件描述符,因为它不会使用这个socket
+    close(pd[1]);   // 0:read, 1:write 还要关闭匿名管道的写端
+    dup2(pd[0], 0); // set pd[0] as stdin 将pd[0]重定向为标准输入
+    if (pd[0] > 0)  // 如果pd[0]大于0，就代表它没有成为标准输入,那么就关闭pd[0]
       close(pd[0]);
-    /*use shell to parse DEFAULT_PLAYERCMD, NULL means to end*/
+    
+    // execl 会替换当前进程映像，执行成功则不返回。
+    /* use shell to parse DEFAULT_PLAYERCMD, NULL means to end */
     execl("/bin/sh", "sh", "-c", client_conf.player_cmd, NULL);
+    // 只有在execl函数执行失败时才会执行下面的代码
     perror("execl()");
     exit(1);
   } 
   else // parent
-  // 父进程的动作
+  // 父进程的动作: 从网络接收数据, 发送给子进程
   {
-    /*receive data from network, write it to pipe*/
-    // receive programme
+    /* receive data from network, write it to pipe */
+    // receive programme 收节目单
     struct msg_list_st *msg_list;
     msg_list = malloc(MSG_LIST_MAX);
     if (msg_list == NULL) {
@@ -210,6 +217,8 @@ sizeof(mreq) 是选项值的大小。
     }
     //必须从节目单开始
     while (1) {
+      // 从UDP 套接字sd接收数据,最多MSG_LIST_MAX字节的数据到msg_list缓冲区中，
+      // 并获取发送方地址信息存入server_addr，其长度存入serveraddr_len。返回值len表示实际接收的字节数或错误码。
       len = recvfrom(sd, msg_list, MSG_LIST_MAX, 0, (void *)&server_addr,
                      &serveraddr_len);
       fprintf(stderr, "server_addr:%d\n", server_addr.sin_addr.s_addr);
@@ -224,7 +233,7 @@ sizeof(mreq) 是选项值的大小。
       }
       break;
     }
-
+    // 打印节目单,并选择频道
     // printf programme, select channel
     /*
     1.music xxx
@@ -233,18 +242,22 @@ sizeof(mreq) 是选项值的大小。
     */
     // receive channel package, send it to child process
     struct msg_listentry_st *pos;
-    for (pos = msg_list->entry; (char *)pos < ((char *)msg_list + len);
-         pos = (void *)((char *)pos) + ntohs(pos->len)) {
+    // 通过移动节目实体的位置指针,来遍历节目单
+    for (pos = msg_list->entry; 
+          (char *)pos < ((char *)msg_list + len);
+           pos = (void *)((char *)pos) + ntohs(pos->len)) {
+
       printf("channel:%d%s", pos->chnid, pos->desc);
     }
-    /*free list*/
+    /* 释放节目单指针 */
     free(msg_list);
     while (ret < 1) {
       ret = scanf("%d", &chosenid);
+      // 如果采集到的数据不是1位数字,就退出程序
       if (ret != 1)
         exit(1);
     }
-
+    // 创建一个用于发送频道数据的结构体
     msg_channel = malloc(MSG_CHANNEL_MAX);
     if (msg_channel == NULL) {
       perror("malloc");
@@ -258,8 +271,10 @@ sizeof(mreq) 是选项值的大小。
     memset(rcvbuf, 0, BUFSIZE);
     int bufct = 0; // buffer count
     while (1) {
+      // 从UDP 套接字sd接收数据,最多MSG_CHANNEL_MAX字节的数据到msg_channel缓冲区中
       len = recvfrom(sd, msg_channel, MSG_CHANNEL_MAX, 0, (void *)&raddr, &raddr_len);
       //防止有人恶意发送不相关的包
+      // 如果收到的地址和端口与节目单的发送方地址和端口不匹配,就退出程序
       if (raddr.sin_addr.s_addr != server_addr.sin_addr.s_addr) {
         inet_ntop(AF_INET, &raddr.sin_addr.s_addr, ipstr_raddr, 30);
         inet_ntop(AF_INET, &server_addr.sin_addr.s_addr, ipstr_server_addr, 30);
@@ -275,11 +290,13 @@ sizeof(mreq) 是选项值的大小。
         fprintf(stderr, "Ignore:massage too short.\n");
         continue;
       }
-
+      // 如果收到的频道号与选择的频道号匹配
       if (msg_channel->chnid == chosenid) {
+        // 将msg_channel->data中的数据复制到rcvbuf + offset指向的内存空间中，
+        // 复制的数据长度为len - sizeof(chnid_t)字节。
         memcpy(rcvbuf + offset, msg_channel->data, len - sizeof(chnid_t));
         offset += len - sizeof(chnid_t);
-
+        // 如果缓冲区计数bufct是偶数，就调用writen函数将rcvbuf中的数据写入管道的写端
         if (bufct++ % 2 == 0) {
           if (writen(pd[1], rcvbuf, offset) < 0) {
             exit(1);

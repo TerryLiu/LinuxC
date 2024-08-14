@@ -1,7 +1,8 @@
 #ifndef CLIENT_H_
 #define CLIENT_H_
+// mpg123命令的参数中含有"-", 这代表使用标准输入作为数据源
 #define DEFAULT_PLAYERCMD " /usr/bin/mpg123 -   > /dev/null"
-//#define DEFAULT_PLAYERCMD " /usr/bin/mplayer -   > /dev/null"
+// #define DEFAULT_PLAYERCMD " /usr/bin/mplayer -   > /dev/null"
 struct client_conf_st
 {
   char *rcvport; // for local using
