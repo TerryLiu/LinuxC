@@ -15,7 +15,7 @@
 #define MAX_DATA (MSG_CHANNEL_MAX - sizeof(chnid_t))
 
 #define MSG_LIST_MAX ((1<<16)-20-8)
-#define MAX_DATA (MSG_CHANNEL_MAX - sizeof(chnid_t))
+#define MAX_ENTRY (MSG_LIST_MAX - sizeof(chnid_t))
 
 #include "site_type.h"
 // 每一个频道内容结构体： 频道号，data(指针)

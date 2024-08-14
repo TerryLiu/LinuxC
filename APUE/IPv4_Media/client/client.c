@@ -17,12 +17,15 @@
 #include <string.h>
 
 /*
--M --mgroup specify multicast group
--P --port specify receive port
--p --player specify player
--H --help show help
+-M --mgroup   specify multicast group.指定多播组
+-P --port     specify receive port.指定接收端口
+-p --player   specify player.指定播放器
+-H --help     show help.显示帮助
 */
 
+/* 在 C 语言中，结构体成员前面加点符号（.）是一种特殊的语法，称为指定成员初始化。
+这种语法允许你在初始化结构体时直接指定成员的值，而不需要按照成员在结构体中定义的顺序来进行。 */
+// 声明一个全局的默认配置结构体
 struct client_conf_st client_conf = {.rcvport = DEFAULT_RCVPORT,
                                      .mgroup = DEFAULT_MGROUP,
                                      .player_cmd = DEFAULT_PLAYERCMD};
@@ -62,12 +65,13 @@ int main(int argc, char *argv[]) {
   */
   int index = 0;
   int sd = 0;
-  struct ip_mreqn mreq;     // group setting
-  struct sockaddr_in laddr; // local address
-  uint64_t receive_buf_size = BUFSIZE;
-  int pd[2];
+  struct ip_mreqn mreq;     // group setting 存储多播组设置
+  struct sockaddr_in laddr; // local address 存储本地地址
+  uint64_t receive_buf_size = BUFSIZE; // 用于指定接收缓冲区的大小
+  // 在常见的用途中，这样的数组常用于存储管道（pipe）的两个文件描述符，其中一个用于写入数据，另一个用于读取数据。
+  int pd[2];  
   pid_t pid;
-  struct sockaddr_in server_addr;
+  struct sockaddr_in server_addr; // 存储服务器地址
   socklen_t serveraddr_len;
   int len;
   int chosenid;
@@ -76,13 +80,18 @@ int main(int argc, char *argv[]) {
   struct sockaddr_in raddr;
   socklen_t raddr_len;
 
+  // 一个长选项数组
   struct option argarr[] = {{"port", 1, NULL, 'P'},
                             {"mgroup", 1, NULL, 'M'},
+                            {"player", 1, NULL, 'p'},
                             {"help", 0, NULL, 'H'},
                             {NULL, 0, NULL, 0}};
   int c;
   while (1) {
     /*long format argument parse*/
+    /* 这段C代码使用 getopt_long 函数从命令行参数 argc 和 argv 中解析长选项和短选项。
+    它处理以下短选项："P", "M", "p", 和 "H"，以及一个长选项数组 argarr。
+    &index 用于跟踪匹配到的长选项的索引。返回值赋给 c，代表当前解析到的选项字符。 */
     c = getopt_long(argc, argv, "P:M:p:H", argarr, &index);
     if (c < 0)
       break;
@@ -93,7 +102,7 @@ int main(int argc, char *argv[]) {
     case 'M':
       client_conf.mgroup = optarg;
       break;
-    case 'h':
+    case 'p':
       client_conf.player_cmd = optarg;
       break;
     case 'H':
@@ -101,6 +110,7 @@ int main(int argc, char *argv[]) {
       exit(0);
       break;
     default:
+    // abort() 函数用于立即终止程序，并发送一个 SIGABRT 信号，通常会产生核心转储文件以供调试。 
       abort();
       break;
     }
@@ -112,38 +122,67 @@ int main(int argc, char *argv[]) {
     exit(0);
   }
   // multicast group
+  // 将点分十进制的IP地址字符串转换为一个32位的整数.即实现了多播组的赋值.
   inet_pton(AF_INET, client_conf.mgroup,
             &mreq.imr_multiaddr); // 255.255.255.255-->0xFF..
   // local address(self)
+  // 实现本地接口的 IP 地址的赋值.
   inet_pton(AF_INET, "0.0.0.0", &mreq.imr_address);
   // local net card
+  // if_nametoindex函数是将网卡名称转换为一个整数(即网络设备的索引号)，即实现了网卡编号的赋值.
   mreq.imr_ifindex = if_nametoindex("enp4s0f3u2u2");
+  /* setsockopt 函数的第二个参数 level 指定了要设置的选项所属的协议层级或协议栈的特定部分。
+  这个参数决定了选项 optname 的解释范围和上下文。
+level 参数的一些常见值包括：
+SOL_SOCKET：表示选项适用于套接字本身的层次。
+IPPROTO_IP 或 SOL_IP：表示选项适用于 IP 层。
+IPPROTO_TCP 或 SOL_TCP：表示选项适用于 TCP 协议层。
+IPPROTO_UDP 或 SOL_UDP：表示选项适用于 UDP 协议层。 */
+/* 
+setsockopt函数的参数说明:
+sd 是套接字描述符。
+IPPROTO_IP 指定了 IP 层。
+IP_ADD_MEMBERSHIP 是一个特定于 IP 层的选项，用于让主机加入一个多播组。
+&mreq 是指向结构体 ip_mreq 的指针，它包含了多播组地址和接口信息。
+sizeof(mreq) 是选项值的大小。
+ */
   if (setsockopt(sd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
     perror("setsockopt()");
     exit(1);
   }
   // improve efficiency
+  /* 
+  setsockopt函数将IP_MULTICAST_LOOP选项设为receive_buf_size的值。
+  若调用失败，则输出错误信息并退出程序。实际上，并非设置接收缓冲大小，而是控制多播数据是否在本机循环回送。
+   */
   if (setsockopt(sd, IPPROTO_IP, IP_MULTICAST_LOOP, &(receive_buf_size), sizeof(receive_buf_size)) < 0) {
     perror("setsockopt()");
     exit(1);
   }
   laddr.sin_family = AF_INET;
+  // 将接收数据的端口赋值为命令行参数中的端口号
+  // htons函数用来将本机字节序转换为网络字节序。
   laddr.sin_port = htons(atoi(client_conf.rcvport));
+  // 将本地要绑定的地址设置为0.0.0.0
   inet_pton(AF_INET, "0.0.0.0", &laddr.sin_addr);
+  // 绑定套接字到指定的端口
   if (bind(sd, (void *)&laddr, sizeof(laddr)) < 0) {
     perror("bind()");
     exit(1);
   }
+  // 创建了一个匿名管道
+  // 参数 pd 是一个包含两个元素的整型数组。pd[0] 代表管道的读端，pd[1] 代表写端。
   if (pipe(pd) < 0) {
     perror("pipe()");
     exit(1);
   }
-
+  // 创建一个子进程
   pid = fork();
   if (pid < 0) {
     perror("fork()");
     exit(1);
   }
+  // 子进程的动作
   if (pid == 0) // child, read, close write
   {
     /*decode*/
@@ -157,7 +196,9 @@ int main(int argc, char *argv[]) {
     execl("/bin/sh", "sh", "-c", client_conf.player_cmd, NULL);
     perror("execl()");
     exit(1);
-  } else // parent
+  } 
+  else // parent
+  // 父进程的动作
   {
     /*receive data from network, write it to pipe*/
     // receive programme
