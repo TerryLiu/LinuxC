@@ -20,10 +20,10 @@
 #define PATHSIZE 1024
 #define LINEBUFSIZE 1024
 #define MP3_BITRATE 320 * 1024 // 采样率
-
+// 一个频道实体
 struct channel_context_st {
-  chnid_t chnid;
-  char *desc;
+  chnid_t chnid;  // 频道id
+  char *desc;   // 频道描述
   glob_t mp3glob; // 目录项
   int pos;        // current song
   int fd;         // current song fd
