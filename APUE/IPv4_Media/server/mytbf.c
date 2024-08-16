@@ -127,7 +127,7 @@ static int get_free_pos_unlocked() {
   return -1;
 }
 
-// 初始化一个令牌桶
+// 初始化一个令牌桶.cps=每秒钟要生成多少个令牌,burst=令牌桶的最大容量
 mytbf_t *mytbf_init(int cps, int burst) {
   // 声明一个令牌桶的指针
   struct mytbf_st *me;

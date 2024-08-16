@@ -5,7 +5,7 @@
 
 #define DEFAULT_MGROUP "224.2.2.2" // default multicast group
 #define DEFAULT_RCVPORT "1989"
-#define CHANNUM 200 // channel number
+#define CHANNUM 100 // channel number
 
 #define LISTCHNID 0 // list channel
 #define MINCHNID 1 // minimum channel id
