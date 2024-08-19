@@ -60,6 +60,8 @@
     "*.py": "python",
     "signal.h": "c",
     "string.h": "c",
-    "proto.h": "c"
+    "proto.h": "c",
+    "server_conf.h": "c",
+    "stdint.h": "c"
   }
 }

@@ -215,6 +215,8 @@ sizeof(mreq) 是选项值的大小。
       perror("malloc");
       exit(1);
     }
+    // 运行时必须要初始化, 否则第一次打印出来的地址会出不正确
+    serveraddr_len = sizeof(server_addr);
     //必须从节目单开始
     while (1) {
       // 从UDP 套接字sd接收数据,最多MSG_LIST_MAX字节的数据到msg_list缓冲区中，
@@ -263,6 +265,7 @@ sizeof(mreq) 是选项值的大小。
       perror("malloc");
       exit(1);
     }
+    // 运行时必须要初始化, 否则第一次打印出来的地址会出不正确
     raddr_len = sizeof(raddr);
     char ipstr_raddr[30];
     char ipstr_server_addr[30];
@@ -297,6 +300,7 @@ sizeof(mreq) 是选项值的大小。
         memcpy(rcvbuf + offset, msg_channel->data, len - sizeof(chnid_t));
         offset += len - sizeof(chnid_t);
         // 如果缓冲区计数bufct是偶数，就调用writen函数将rcvbuf中的数据写入管道的写端
+        // 这是为了让子进程可以播放的数据不至于太少,出现播放卡顿.
         if (bufct++ % 2 == 0) {
           if (writen(pd[1], rcvbuf, offset) < 0) {
             exit(1);

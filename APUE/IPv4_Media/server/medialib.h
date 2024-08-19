@@ -4,10 +4,10 @@
 #include "../include/proto.h"
 #include <stdio.h>
 
-// 记录每一条节目单信息 频道号 描述信息
+// 记录每一条节目单信息
 struct mlib_listentry_st{
-  chnid_t chnid;
-  char *desc;
+  chnid_t chnid; // 频道号 
+  char *desc; //  描述信息
 };
 // 获取节目单
 int mlib_getchnlist(struct mlib_listentry_st **mchnarr, int *index);

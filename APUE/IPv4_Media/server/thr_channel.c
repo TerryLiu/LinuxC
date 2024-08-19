@@ -19,19 +19,20 @@
 
 static int tid_nextpos = 0;
 
-// 每一个线程负责一个频道 频道号 处理该频道的线程
+// 每一个线程负责一个频道 
 struct thr_channel_entry_st {
-  chnid_t chnid;
-  pthread_t tid;
+  chnid_t chnid; //  频道号
+  pthread_t tid; // 处理该频道的线程
 };
 
 struct thr_channel_entry_st thr_channel[CHANNUM];
 
+// 组织当前线程要发送的频道数据,并发送出去
 static void *thr_channel_snder(void *ptr)
 {
-  struct msg_channel_st *sbufp;
+  struct msg_channel_st *sbufp; // 要发送的数据
   int len;
-  struct mlib_listentry_st *entry = ptr;
+  struct mlib_listentry_st *entry = ptr; // 频道内容
   sbufp = malloc(MSG_CHANNEL_MAX);
   if (sbufp == NULL) {
     syslog(LOG_ERR, "malloc():%s", strerror(errno));
@@ -41,16 +42,20 @@ static void *thr_channel_snder(void *ptr)
   sbufp->chnid = entry->chnid; // 频道号处理
   // 频道内容读取
   while(1) {
+    // 读取频道内容,并存入sbufp->data 
     len = mlib_readchn(entry->chnid, sbufp->data, 320*1024/8); // 320kbit/s
     syslog(LOG_DEBUG, "mlib_readchn() len: %d", len);
     if (len < 0) {
       break;
     }
+    // 发送数据
     if (sendto(serversd, sbufp, len + sizeof(chnid_t), 0, (void*)&sndaddr, sizeof(sndaddr)) < 0) {
       syslog(LOG_ERR, "thr_channel(%d):sendto():%s", entry->chnid,
              strerror(errno));
       break;
     }
+    // 让当前线程自愿放弃处理器；
+    // 将线程置于就绪队列末尾；
     sched_yield();
   }
   pthread_exit(NULL);
@@ -61,10 +66,11 @@ int thr_channel_create(struct mlib_listentry_st *ptr) {
   int err;
   err = pthread_create(&thr_channel[tid_nextpos].tid, NULL, thr_channel_snder, ptr);
   if (err) {
+    // strerror将错误码转换为可读的字符串
     syslog(LOG_WARNING, "pthread_create():%s", strerror(err));
     return -err;
   }
-  thr_channel[tid_nextpos].chnid = ptr->chnid; //填写频道信息
+  thr_channel[tid_nextpos].chnid = ptr->chnid; //填写频道id
   tid_nextpos++;
   return 0;
 }

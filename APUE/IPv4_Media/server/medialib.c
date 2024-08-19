@@ -202,7 +202,7 @@ static int open_next(chnid_t chnid) {
   return -1;
 }
 
-// 读取指定数量的数据
+// 读取指定数量的数据.第一个参数为频道号;第二个参数为数据缓冲区;第三个参数是要读取到字节数量
 ssize_t mlib_readchn(chnid_t chnid, void *buf, size_t size) {
   int tbfsize;
   int len;
@@ -212,7 +212,14 @@ ssize_t mlib_readchn(chnid_t chnid, void *buf, size_t size) {
   syslog(LOG_INFO, "current tbf():%d", mytbf_checktoken(channel[chnid].tbf));
 
   while (1) {
-     // 读取tbfsize数据到从offset处开始的buf,len等于实际读取到的数据长度
+    /* 
+    通过pread读取文件。具体来说：
+    从channel[chnid].fd指定的文件描述符读取数据，
+    读取的数据存入缓冲区buf，
+    尝试读取的最大字节数为tbfsize，
+    从文件的偏移量channel[chnid].offset开始读取，
+    实际读取的字节数存放在len中。
+   */
     len = pread(channel[chnid].fd, buf, tbfsize, channel[chnid].offset);
     /*current song open failed*/
     if (len < 0) {

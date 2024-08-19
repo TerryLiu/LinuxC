@@ -5,7 +5,7 @@
 
 #define DEFAULT_MGROUP "224.2.2.2" // default multicast group
 #define DEFAULT_RCVPORT "1989"
-#define CHANNUM 100 // channel number
+#define CHANNUM 100 // channel number, 在有的代码中叫CHNNR
 
 #define LISTCHNID 0 // list channel
 #define MINCHNID 1 // minimum channel id

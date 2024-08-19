@@ -19,9 +19,9 @@ struct server_conf_st
   char runmode; // 运行模式
   char *ifname; // 网卡名称
 };
-// 说明外部可访问的变量
+// 声明外部可访问的变量
 extern struct server_conf_st server_conf;
-extern int serversd;
-extern struct sockaddr_in sndaddr;
+extern int serversd; // 服务器套接字
+extern struct sockaddr_in sndaddr; // 发送地址
 
 #endif // SERVER_CONF_H_

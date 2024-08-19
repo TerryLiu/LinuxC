@@ -119,11 +119,16 @@ static int socket_init() {
     exit(1);
   }
 
-  // bind
-  // sndaddr.sin_family = AF_INET;
-  // sndaddr.sin_port = htons(atoi(server_conf.rcvport));
+  // bind()
+  // 设置地址家族为 IPv4。
+  sndaddr.sin_family = AF_INET;
+  // 将服务端口号从字符串转换为整数，并转换成网络字节序。
+  sndaddr.sin_port = htons(atoi(server_conf.rcvport));
+  // 将多播组地址字符串转换为二进制格式并存储在结构体中。
+  inet_pton(AF_INET, server_conf.mgroup, &sndaddr.sin_addr.s_addr);
   // inet_pton(AF_INET, server_conf.mgroup, &sndaddr.sin_addr);
   // inet_pton(AF_INET, "0.0.0.0", &sndaddr.sin_addr.s_addr);
+  
 
   return 0;
 }
@@ -218,11 +223,11 @@ F没有冒号，意味着这些选项后面不需要参数。
     exit(1);
   }
 
-  /*create programme thread*/
+  // 创建节目单线程
   thr_list_create(list, list_size);
   /*if error*/
-  /*create channel thread*/
-  //创建频道线程
+
+  //创建多个频道线程
   int i = 0;
   for (i = 0; i < list_size; i++) {
     err = thr_channel_create(list + i);

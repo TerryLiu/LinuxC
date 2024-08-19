@@ -14,3 +14,6 @@
 ## 具体流程
 
 ## 相关知识点回顾
+
+另外一个QT版本的代码见:https://gitee.com/tela2013/IPV4_broadcast
+文档说明: https://blog.csdn.net/qq_43745917/article/details/128048044
